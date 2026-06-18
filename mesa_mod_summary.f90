@@ -82,6 +82,38 @@ contains
       write(strOut, '(F11.7)') mass / solar_mass
     end if
   end subroutine printMassSolar
+  
+  subroutine buildOutputStrings(first, do_rows, elemId, tempData, reactOut, dataOut)
+    logical, intent(in) :: first
+    logical, intent(in) :: do_rows
+    character(len=*), intent(in) :: elemID
+    character(len=*), intent(in) :: tempData
+    character(len=*), intent(inout) :: reactOut
+    character(len=*), intent(inout) :: dataOut
+    character(len=100) :: tempAdd
+    
+!    write (*,*) elemId, tempData
+!    write (*,*) reactOut
+    if (do_rows) then
+      tempAdd = trim(elemID) // achar(9) // trim(tempData) // NEW_LINE('A')
+      if (first) then
+        reactOut = trim(tempAdd)
+      else
+        reactOut = trim(reactOut) // trim(tempAdd)
+      end if        
+        
+    else
+      if (first) then
+        reactOut = trim(elemID)
+        dataOut = trim(tempData)
+      else
+        reactOut = trim(reactOut) // achar(9) // trim(elemID)
+        dataOut = trim(dataOut) // achar(9) // trim(tempData)
+      end if        
+
+    end if
+!    write (*,*) reactOut
+  end subroutine
 end module helper_functions
 
 ! ==============================================================================
@@ -159,6 +191,8 @@ program mesa_mod_summary
   real(kind=real64) :: density        ! density for current zone [g/cm³]
   real(kind=real64) :: rinner, router ! inner/outer radius of current shell [cm]
   real(kind=real64) :: delradius      ! r_outer³ - r_inner³  [cm³]
+  real(kind=real64) :: abundanceThreshold = 0.0 !minimum threshold for reporting abundnaces
+  real              :: abundanceThresholdExponent ! base 10 exponent of abundance threshold
 
   ! ---------------------------------------------------------------------------
   ! Isotope / element accounting
@@ -179,6 +213,7 @@ program mesa_mod_summary
   integer :: reactSize = 0
   integer :: dataSize = 0
   character(len=50)  :: tempData   ! temporary formatted field
+  character(len=20) :: elemID
 
   ! ---------------------------------------------------------------------------
   ! Logicals for output control
@@ -189,6 +224,7 @@ program mesa_mod_summary
   logical :: do_general_summary = .false.
   logical :: do_element_summary_to_si = .false.
   logical :: do_all = .false.
+  logical :: do_rows = .false.
   
   ! ---------------------------------------------------------------------------
   ! List of model files to read and process
@@ -220,14 +256,25 @@ program mesa_mod_summary
       if (args(ix) == "-g") then
         do_general_summary = .true.
       end if
-      if (args(ix) == "-all") then
+      if ((args(ix) == "-all").or.(args(ix) == "--all"))then
         do_all = .true.
       end if
+      if (args(ix) == "--rows") then
+        do_rows = .true.
+      end if
+      if (args(ix)(1:3) == "-l=") then
+          read (args(ix)(4:),*) abundanceThresholdExponent
+          abundanceThreshold = 10**abundanceThresholdExponent
+      end if
+      if (args(ix)(1:7) == "--logX=") then
+          read (args(ix)(8:),*) abundanceThresholdExponent
+          abundanceThreshold = 10**abundanceThresholdExponent
+       end if
     else
       num_models = num_models + 1 ! count how many models there are to process
     end if
   end do
-  
+
   allocate(model_list(num_models))
   
   ! read through the argument list and collect the paths to models to process. Hopefully the filename doesn't start with '-'
@@ -246,6 +293,9 @@ program mesa_mod_summary
     write(*,*) "    -e: output integrated masses for each element"
     write(*,*) "    -g: output general summary"
     write(*,*) "    -all: output all isotopes or elements, regardless whether it is present"
+    write(*,*) "    --rows: report table data in rows instead of columns"
+    write(*,*) "    -l=<value>: set the threshold to reporting abudances (in solar masses) to 10^<value>"
+    write(*,*) "    --logX=<value>: same as -l"
     write(*,*) " if no options are selected, -g will be selected by default"
     stop
   end if
@@ -411,38 +461,34 @@ program mesa_mod_summary
       dataSize = 256+23+14*6+10
       allocate(character(len=reactSize) :: reactOut)
       allocate(character(len=dataSize) :: dataOut)
-
     ! Build header and data strings dynamically
-      write(reactOut, '(A, A, A)') "mass (solar)", achar(9), "radius (R⊕)"
-      write(dataOut,  '(F9.7, A, F13.7)') integratedMass / solar_mass, achar(9), &
-                                        radius_rel_earth
+      write(tempData, '(F9.7)') integratedMass / solar_mass
+      call buildOutputStrings(.true., do_rows, "mass (solar)", tempdata, reactOut, dataOut)
+
+      write(tempData, '(F13.7)') radius_rel_earth
+      call buildOutputStrings(.false., do_rows, "radius (R⊕)", tempdata, reactOut, dataOut)
 
       call printMassSolar(get_ele_mass_by_Z(2),tempData) ! He
-      reactOut = trim(reactOut) // achar(9) // "He mass (solar)"
-      dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+      call buildOutputStrings(.false., do_rows, "He mass (solar)", tempdata, reactOut, dataOut)
 
       call printMassSolar(get_ele_mass_by_Z(6),tempData) ! C
-      reactOut = trim(reactOut) // achar(9) // "C mass (solar)"
-      dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+      call buildOutputStrings(.false., do_rows, "C mass (solar)", tempdata, reactOut, dataOut)
 
       call printMassSolar(get_ele_mass_by_Z(8),tempData) ! O
-      reactOut = trim(reactOut) // achar(9) // "O mass (solar)"
-      dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+      call buildOutputStrings(.false., do_rows, "O mass (solar)", tempdata, reactOut, dataOut)
 
       call printMassSolar(get_ele_mass_by_Z(10),tempData) ! Ne
-      reactOut = trim(reactOut) // achar(9) // "Ne mass (solar)"
-      dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+      call buildOutputStrings(.false., do_rows, "Ne mass (solar)", tempdata, reactOut, dataOut)
 
       call printMassSolar(get_ele_mass_by_Z(12),tempData) ! Mg
-      reactOut = trim(reactOut) // achar(9) // "Mg mass (solar)"
-      dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+      call buildOutputStrings(.false., do_rows, "Mg mass (solar)", tempdata, reactOut, dataOut)
 
       call printMassSolar(get_ele_mass_by_Z(14),tempData) ! Si
-      reactOut = trim(reactOut) // achar(9) // "Si mass (solar)"
-      dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+      call buildOutputStrings(.false., do_rows, "Si mass (solar)", tempdata, reactOut, dataOut)
 
       write(*,*) trim(reactOut)
-      write(*,*) trim(dataOut)
+      if (.not.(do_rows)) write(*,*) trim(dataOut)
+      
       
       deallocate(reactOut)
       deallocate(dataOut)
@@ -460,28 +506,36 @@ program mesa_mod_summary
       allocate(character(len=dataSize) :: dataOut)
 
       if (num_models > 1) then
+      
         write(reactOut, '(A, A, A, A, A)') "model path", achar(9), "mass (solar)", achar(9), "radius (R⊕)"
         write(dataOut,  '(A, A, F11.7, A, F13.7)') trim(model_list(nm)), achar(9), integratedMass / solar_mass, achar(9), &
                                       radius_rel_earth
       else 
-        write(reactOut, '(A, A, A)') "mass (solar)", achar(9), "radius (R⊕)"
-        write(dataOut,  '(F11.7, A, F13.7)') integratedMass / solar_mass, achar(9), &
-                                      radius_rel_earth
+        write(tempData, '(F9.7)') integratedMass / solar_mass
+        call buildOutputStrings(.true., do_rows, "mass (solar)", tempdata, reactOut, dataOut)
+
+        write(tempData, '(F13.7)') radius_rel_earth
+        call buildOutputStrings(.false., do_rows, "radius (R⊕)", tempdata, reactOut, dataOut)
+      
       end if
 
       do ix = 1, n_isotopes
         isoMass = get_iso_mass_by_idx(ix)
-        if ((isoMass > 0) .or. (do_all)) then
+        if (((isoMass / solar_mass) > abundanceThreshold) .or. (do_all)) then
           call printMassSolar(isoMass,tempData)
-          reactOut = trim(reactOut) // achar(9) // trim(isotope_table(ix)%id) // " mass (solar)"
-          dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+          if (num_models == 1) then 
+            call buildOutputStrings(.false., do_rows, trim(isotope_table(ix)%id) // " mass (solar)", tempdata, reactOut, dataOut)
+          else 
+            reactOut = trim(reactOut) // achar(9) // trim(isotope_table(ix)%id) // " mass (solar)"
+            dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+          end if
         end if
       end do
 
       if (nm == 1) then
         write(*,*) trim(reactOut)
       end if
-      write(*,*) trim(dataOut)
+      if ((.not.(do_rows)).or.(nm > 1)) write(*,*) trim(dataOut)
 
       deallocate(reactOut)
       deallocate(dataOut)
@@ -502,25 +556,29 @@ program mesa_mod_summary
         write(dataOut,  '(A, A, F11.7, A, F13.7)') trim(model_list(nm)), achar(9), integratedMass / solar_mass, achar(9), &
                                         radius_rel_earth
       else 
-        write(reactOut, '(A, A, A)') "mass (solar)", achar(9), "radius (R⊕)"
-        write(dataOut,  '(F11.7, A, F13.7)') integratedMass / solar_mass, achar(9), &
-                                      radius_rel_earth
+        write(tempData, '(F9.7)') integratedMass / solar_mass
+        call buildOutputStrings(.true., do_rows, "mass (solar)", tempdata, reactOut, dataOut)
+
+        write(tempData, '(F13.7)') radius_rel_earth
+        call buildOutputStrings(.false., do_rows, "radius (R⊕)", tempdata, reactOut, dataOut)
       end if
       
       do ix = 1, n_elements
-        isoMass = get_ele_mass_by_Z(ix)
-        if ((isoMass > 0) .or. (do_all)) then
+        isoMass = get_ele_mass_by_Z(ix - 1)
+        if (((isoMass / solar_mass) > abundanceThreshold) .or. (do_all)) then
           call printMassSolar(isoMass,tempData)
-          element = find_element_by_Z(ix)
-          reactOut = trim(reactOut) // achar(9) // trim(element%symbol) // " mass (solar)"
-          dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+          element = find_element_by_Z(ix - 1)
+          if (num_models == 1) then 
+            call buildOutputStrings(.false., do_rows, trim(element%symbol) // " mass (solar)", tempdata, reactOut, dataOut)
+          else 
+            reactOut = trim(reactOut) // achar(9) // trim(element%symbol) // " mass (solar)"
+            dataOut  = trim(dataOut)  // achar(9) // trim(tempData)
+          end if
         end if
       end do
 
-      if (nm == 1) then
-        write(*,*) trim(reactOut)
-      end if
-      write(*,*) trim(dataOut)
+      if (nm == 1) write(*,*) trim(reactOut)
+      if ((.not.(do_rows)).or.(nm > 1)) write(*,*) trim(dataOut)
 
       deallocate(reactOut)
       deallocate(dataOut)
