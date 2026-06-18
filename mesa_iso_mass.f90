@@ -591,7 +591,7 @@ contains
     if (Z < n_elements) then
         mass = element_table(Z + 1)%mass
     else
-      write(0,'(3a)') 'mesa_iso_mass WARNING: get_ele_mass_by_Z: Z = ', Z, '" not found.'
+      write(0,'(a,i3,a)') 'mesa_iso_mass WARNING: get_ele_mass_by_Z: Z = ', Z, ' not found.'
     end if
   end function get_ele_mass_by_Z
 
