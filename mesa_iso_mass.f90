@@ -271,7 +271,7 @@ contains
   ! ===========================================================================
   subroutine init_iso_mass()
 
-    integer, parameter :: NISO = 86
+    integer, parameter :: NISO = 101
     
     type :: isotope_specification
       integer :: Z
@@ -365,7 +365,40 @@ contains
       isotope_specification(82, 185, 246), & !lead
       isotope_specification(83, 188, 251), & !bismuth
       isotope_specification(84, 193, 237), & !polonium
-      isotope_specification(85, 210, 211) & !astatine    
+      isotope_specification(85, 210, 211), & !astatine    
+      isotope_specification(86, 222, 222), & !radon
+!      isotope_specification(87, 222, 222) & !francium - no isotopes stable for 1 day or more
+      isotope_specification(88, 223, 228), & !radium
+      isotope_specification(89, 225, 227), & !actinum
+      isotope_specification(90, 227, 234), & !thorium
+      isotope_specification(91, 229, 233), & !protactinium
+      isotope_specification(92, 230, 238), & !uranium
+      isotope_specification(93, 234, 238), & !uranium
+      isotope_specification(94, 236, 247), & !plutonium
+      isotope_specification(95, 241, 243), & !americium
+      isotope_specification(96, 240, 250), & !curium
+      isotope_specification(97, 245, 249), & !berkelium
+      isotope_specification(98, 248, 254), & !californium
+      isotope_specification(99, 252, 257), & !einsteinium
+      isotope_specification(100, 253, 257), & !fermium
+      isotope_specification(101, 258, 260) & !mendelevium
+!      isotope_specification(102, 258, 260), & !nobelium - no isotopes stable for 1 day or more
+!      isotope_specification(103, 258, 260), & !lawrencium - no isotopes stable for 1 day or more
+!      isotope_specification(104, 258, 260), & !rutherfordium - no isotopes stable for 1 day or more
+!      isotope_specification(105, 258, 260), & !dubnium - no isotopes stable for 1 day or more
+!      isotope_specification(106, 258, 260), & !seaborgium - no isotopes stable for 1 day or more
+!      isotope_specification(107, 258, 260), & !bohrium - no isotopes stable for 1 day or more
+!      isotope_specification(108, 258, 260), & !hassium - no isotopes stable for 1 day or more
+!      isotope_specification(109, 258, 260), & !meitnerium - no isotopes stable for 1 day or more
+!      isotope_specification(110, 258, 260), & !darmstadtium - no isotopes stable for 1 day or more
+!      isotope_specification(111, 258, 260), & !roentgenium - no isotopes stable for 1 day or more
+!      isotope_specification(112, 258, 260), & !copernicium - no isotopes stable for 1 day or more
+!      isotope_specification(113, 258, 260), & !nihonium - no isotopes stable for 1 day or more
+!      isotope_specification(114, 258, 260), & !flerovium - no isotopes stable for 1 day or more
+!      isotope_specification(115, 258, 260), & !moscovium - no isotopes stable for 1 day or more
+!      isotope_specification(116, 258, 260), & !livermorium - no isotopes stable for 1 day or more
+!      isotope_specification(117, 258, 260), & !tennessine - no isotopes stable for 1 day or more
+!      isotope_specification(118, 258, 260), & !oganesson - no isotopes stable for 1 day or more
    ] 
     
 
